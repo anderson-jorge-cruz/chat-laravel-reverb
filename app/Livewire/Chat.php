@@ -2,8 +2,10 @@
 
 namespace App\Livewire;
 
+use App\Events\NewChatMessageEvent;
 use App\Models\ChatMessage;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
@@ -12,11 +14,44 @@ class Chat extends Component
     public User|null $activeUser = null;
     public $messages = null;
     public string $message = '';
+    public Collection $contacts;
+
+    public function mount()
+    {
+        $this->contacts = User::all()->except(Auth::id());
+    }
+
+    public function getListeners()
+    {
+        return [
+            "echo-private:chat-messages." . Auth::id() . ",.NewChatMessageEvent" => "loadBroadcastedMessage"
+        ];
+    }
 
     public function setActiveUser(User $user): void
     {
-        $currentUserId = Auth::id();
         $this->activeUser = $user;
+        $this->loadMessages();
+    }
+
+    
+    public function loadBroadcastedMessage(array $data)
+    {
+        $message = ChatMessage::find($data['message']);
+        if ($message->sent_to == Auth::id() && $message->sent_by == $this->activeUser?->id) {
+            $this->messages->push($message);
+        } else {
+            $this->contacts->filter(function (User $user) use ($message) {
+                if ($user->id == $message->SentBy->id) {
+                    $user->chatNotification = true;
+                }
+            });
+        }
+    }
+
+    public function loadMessages()
+    {
+        $currentUserId = Auth::id();
         $this->messages = ChatMessage::query()
             ->where(function ($query) use ($currentUserId) {
                 $query->where('sent_to', $this->activeUser->id)
@@ -30,7 +65,7 @@ class Chat extends Component
             ->get();
     }
 
-    public function newMessage()
+    public function newMessage(): void
     {
         $message = ChatMessage::query()->create([
             'message' => $this->message,
@@ -41,14 +76,14 @@ class Chat extends Component
         $this->messages->push($message);
 
         $this->reset('message');
+
+        NewChatMessageEvent::dispatch($message, $message->sent_to);   
     }
 
     public function render()
     {
-        $contacts = User::all()->except(Auth::id());
-
         return view('livewire.chat')->with([
-            'contacts' => $contacts->count() < 1 ? null : $contacts,
+            'contacts' => $this->contacts->count() < 1 ? null : $this->contacts,
         ]);
     }
 }

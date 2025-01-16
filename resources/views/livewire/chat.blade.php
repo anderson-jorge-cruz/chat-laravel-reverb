@@ -16,7 +16,12 @@
                     wire:key="{{$user->id}}"
                     wire:click="setActiveUser({{ $user }})"
                 >
-                    {{$user->name}}
+                    <p class="flex items-center">
+                        {{$user->name}}
+                    @if ($user->chatNotification)
+                        <span class="ml-2 w-2 h-2 bg-blue-500 rounded-full"></span>
+                    @endif
+                    </p>
                 </li>
             @endforeach
         @endif

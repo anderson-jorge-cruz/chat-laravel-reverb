@@ -11,4 +11,9 @@ class ChatMessage extends Model
     use HasFactory;
 
     protected $guarded = [];
+
+    public function SentBy()
+    {
+        return $this->belongsTo(User::class, 'sent_by');
+    }
 }
