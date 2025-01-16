@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.messageFromMe {
+    @apply text-right
+}
+
+.messageFromMe p {
+    @apply bg-indigo-500 bg-opacity-25
+}
+
+.messageToMe p {
+    @apply bg-gray-300 bg-opacity-25
+}
