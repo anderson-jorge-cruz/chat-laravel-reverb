@@ -12,7 +12,7 @@ use Livewire\Component;
 class Chat extends Component
 {
     public User|null $activeUser = null;
-    public $messages = null;
+    public $messages;
     public string $message = '';
     public Collection $contacts;
 
@@ -73,7 +73,11 @@ class Chat extends Component
             'sent_by' => Auth::id()
         ]);
 
-        $this->messages->push($message);
+        if (is_null($this->messages)) {
+            $this->loadMessages();
+        } else {
+            $this->messages->push($message);
+        }
 
         $this->reset('message');
 
